@@ -9,13 +9,12 @@ module Tekeya
           @queue = :activity_queue
 
           # @private
-          def self.perform(entity_id, entity_type, activity_key, score, trackers = nil)
+          def self.perform(entity_id, entity_type, activity_key, score)
             # get the entity class
             entity_type = entity_type.safe_constantize
             entity = entity_type.where(entity_type.entity_primary_key.to_sym => entity_id).first
             # we only need the feed keys of the trackers
-            trackers = entity.trackers if trackers.nil?
-            entity_trackers_feeds = trackers.map(&:feed_key)
+            entity_trackers_feeds = entity.trackers.map(&:feed_key)
             # keep track of the keys we delete in the trim operation for garbage collection
             removed_keys = []
 
