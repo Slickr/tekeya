@@ -13,16 +13,18 @@ module Tekeya
       define_tekeya_primary_key :id
 
       # collection to be used when fanning out activities.
-      attr_accessor :fanouts
+     
       #default fanouts
       define_tekeya_fanouts :trackers
-
+      def fanouts
+        @fanouts
+      end 
       def define_tekeya_fanouts(to)
-        fanouts = to
+        @fanouts = to
       end
 
       def reset_tekeya_fanouts
-        fanouts = trackers
+        @fanouts = trackers
       end  
 
       # define the relation with the activity
