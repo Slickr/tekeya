@@ -8,6 +8,7 @@ group :development do
   gem 'yard'      , '~> 0.8.2.1'
   gem 'bluecloth'
   gem 'guard-rspec'
+  gem 'protected_attributes'
   gem 'ruby_gntp'
   gem 'guard-bundler'
   gem 'rb-fsevent', '~> 0.9.1'
