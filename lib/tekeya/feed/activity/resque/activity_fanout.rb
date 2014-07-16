@@ -14,8 +14,7 @@ module Tekeya
             entity_type = entity_type.safe_constantize
             entity = entity_type.where(entity_type.entity_primary_key.to_sym => entity_id).first
             # we only need the feed keys of the trackers
-            entity.reset_tekeya_fanouts unless fanouts
-            entity_trackers_feeds = entity.fanouts.map(&:feed_key)
+            entity_trackers_feeds = entity.trackers.map(&:feed_key)
             # keep track of the keys we delete in the trim operation for garbage collection
             removed_keys = []
 
