@@ -17,7 +17,7 @@ module Tekeya
       #default fanouts
       define_tekeya_fanouts :trackers
 
-      def define_tekeya_fanouts=(to)
+      def define_tekeya_fanouts(to)
         fanouts = to
       end
 
