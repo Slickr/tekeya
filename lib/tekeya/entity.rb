@@ -12,6 +12,19 @@ module Tekeya
       # default primary key
       define_tekeya_primary_key :id
 
+      # collection to be used when fanning out activities.
+      attr_accessor :fanouts
+      #default fanouts
+      define_tekeya_fanouts :trackers
+
+      def tekeya_fanouts=(to)
+        fanouts = to
+      end
+
+      def reset_tekeya_fanouts
+        fanouts = trackers
+      end  
+
       # define the relation with the activity
       has_many :activities, as: :entity, class_name: "::Tekeya::Activity", dependent: :destroy do
         # Returns activities dating up to 10 days in the past
