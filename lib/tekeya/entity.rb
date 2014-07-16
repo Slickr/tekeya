@@ -13,7 +13,7 @@ module Tekeya
       define_tekeya_primary_key :id
 
       # collection to be used when fanning out activities.
-      attr_accessor :fanouts
+      attr_writer :fanouts
       #default fanouts
       define_tekeya_fanouts :trackers
 
