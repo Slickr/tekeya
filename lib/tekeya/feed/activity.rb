@@ -3,6 +3,8 @@ module Tekeya
     module Activity
       extend ActiveSupport::Concern
 
+      has_many :fanouts, as: :act, class_name: 'Tekeya::Fanout', dependent: :destroy
+
       included do
         belongs_to    :entity, polymorphic: true, autosave: true
         belongs_to    :author, polymorphic: true, autosave: true
@@ -71,6 +73,8 @@ module Tekeya
         k[7] = score(self.created_at)
         k.join(':')
       end
+
+
 
       # @private
       #

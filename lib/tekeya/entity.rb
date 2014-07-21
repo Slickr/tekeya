@@ -3,6 +3,7 @@ module Tekeya
   module Entity
     extend ActiveSupport::Concern
 
+
     included do
       # Entities are attachable to activities
       include ::Tekeya::Feed::Attachable
@@ -14,6 +15,13 @@ module Tekeya
 
       # define the relation with the activity
       has_many :activities, as: :entity, class_name: "::Tekeya::Activity", dependent: :destroy do
+         has_many :fanouts, as: :entity, class_name: "::Tekeya::Fanout", dependent: :destroy do
+          def custom_fanouts(activity, fanouts)
+            fanouts.each do |fanout|
+             Fanout.create (act:activity, entity:fanout)
+            end 
+          end  
+         end
         # Returns activities dating up to 10 days in the past
         def recent
           c = unless ::Tekeya::Configuration.instance.feed_storage_orm.to_sym == :mongoid

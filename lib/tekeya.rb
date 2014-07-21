@@ -37,12 +37,14 @@ module Tekeya
     autoload :Attachable
     autoload :Attachment
     autoload :Notification
+    autoload :Fanout
 
     module Activity
       extend ActiveSupport::Autoload
 
       autoload :Item
       autoload :Resque
+
 
       module Resque
         extend ActiveSupport::Autoload
