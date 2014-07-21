@@ -6,7 +6,7 @@ module Tekeya
         class ActivityFanout
           include Tekeya::Feed::Activity::Resque
 
-          def id_from_activity_key(activity_key)
+          def self.id_from_activity_key(activity_key)
             index_of_second_colon = activity_key.index(':', 9)
             id = activity_key[9...index_of_second_colon]
             id
@@ -22,18 +22,16 @@ module Tekeya
           @queue = :activity_queue
 
           # @private
-          def self.perform(entity_id, entity_type, activity_key, score)
+          def self.perform(entity_id, entity_type, activity_key, score, fanouts = nil)
             # get the entity class
             entity_type = entity_type.safe_constantize
             entity = entity_type.where(entity_type.entity_primary_key.to_sym => entity_id).first
             # we only need the feed keys of the trackers
-            activity_id = id_from_activity_key(activity_key)
-            
-            activity = Activity.find(activity_id)
 
-            fanouts = activity.fanouts
+
+            
             fanouts = entity.trackers if fanouts.nil? || fanouts.empty? 
-            entity_trackers_feeds = fanouts.map(&:feed_key)
+            entity_trackers_feeds = entity.trackers.map(&:feed_key)
             # keep track of the keys we delete in the trim operation for garbage collection
             removed_keys = []
 

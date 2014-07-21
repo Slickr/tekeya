@@ -1,1 +1,1 @@
-Resque.inline = Rails.env.test?
+# Resque.inline = Rails.env.test?

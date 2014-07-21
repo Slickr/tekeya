@@ -4,7 +4,7 @@ gemspec
 
 group :development do
   gem "rails"     , ">= 3.2.6"
-  gem 'debugger'  , '~> 1.2.0'
+  #gem 'debugger'  , '~> 1.2.0'
   gem 'yard'      , '~> 0.8.2.1'
   gem 'bluecloth'
   gem 'guard-rspec'
@@ -34,7 +34,7 @@ platforms :ruby do
 
   group :mongoid do
     #gem "mongo", "~> 1.7.0"
-    gem "mongoid", "4.0.0.beta1", github: 'mongoid/mongoid'
+    gem "mongoid"
     #gem "bson_ext", "~> 1.7.0"
     #gem 'mongoid-rspec'     , '>= 1.6.0', github: 'evansagge/mongoid-rspec'
   end

@@ -41,6 +41,7 @@ module Tekeya
             ActiveSupport::JSON.decode(act)
           }.map{|att| 
             att['attachable_type'].safe_constantize.find att['attachable_id']
+            p att
           }
 
           return self.new(act_id, act_type, act_attachments, act_actor, act_author, act_time)

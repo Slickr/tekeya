@@ -39,6 +39,7 @@ module Tekeya
     autoload :Notification
     autoload :Fanout
 
+
     module Activity
       extend ActiveSupport::Autoload
 

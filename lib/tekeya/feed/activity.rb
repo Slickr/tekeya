@@ -9,8 +9,8 @@ module Tekeya
         belongs_to    :entity, polymorphic: true, autosave: true
         belongs_to    :author, polymorphic: true, autosave: true
         has_many      :attachments, as: :attache, class_name: 'Tekeya::Attachment'
-        has_many :fanouts, as: :act, class_name: 'Tekeya::Fanout', dependent: :destroy
-        
+        has_many      :fanouts, as: :act, class_name: 'Tekeya::Fanout'
+
         before_create do |act|
           act.author ||= act.entity
         end
@@ -32,6 +32,8 @@ module Tekeya
       def cached_in_redis?
         ::Tekeya.redis.scard(activity_key) > 0
       end
+
+
 
       # Approximates the timestamp to the nearest 15 minutes for grouping activities
       #

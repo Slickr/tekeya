@@ -20,12 +20,14 @@ require "#{File.dirname(__FILE__)}/tekeya_helper"
 require "#{File.dirname(__FILE__)}/../lib/tekeya"
 require "#{File.dirname(__FILE__)}/rails_app/config/environment"
 require "#{File.dirname(__FILE__)}/orm/#{TEKEYA_ORM}"
+
   
 # Requires supporting files with custom matchers and macros, etc,
 # in ./support/ and its subdirectories.
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
 RSpec.configure do |config|
+  Fabrication::Support.find_definitions
   Fabrication.configure do |config|
     config.fabricator_path = 'fabricators'
     config.path_prefix = File.dirname(__FILE__)
