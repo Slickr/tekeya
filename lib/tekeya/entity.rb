@@ -18,7 +18,7 @@ module Tekeya
          has_many :fanouts, as: :entity, class_name: "::Tekeya::Fanout", dependent: :destroy do
           def custom_fanouts(activity, fanouts)
             fanouts.each do |fanout|
-             Fanout.create (act:activity, entity:fanout)
+             Fanout.create(act:activity, entity:fanout)
             end 
           end  
          end
