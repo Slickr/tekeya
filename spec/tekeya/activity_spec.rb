@@ -40,13 +40,7 @@ describe "Tekeya" do
       @act5.cached_in_redis?.should == true
     end
 
-    # it "should add the activity to the owner's profile feed and group activities of the same type within 15 min" do
-    #   id_array = @user.profile_feed.map(&:activity_id)
-    #   id_array.include?(@act1.id.to_s).should == true
-    #   id_array.include?(@act3.id.to_s).should == true
-    #   id_array.include?(@act4.id.to_s).should == true
-    #   id_array.include?(@act5.id.to_s).should == true
-    # end
+
 
     it "should not save the activity in the DB if its grouped with another" do
       @act2.persisted?.should_not == true
