@@ -3,13 +3,14 @@ module Tekeya
     module Activity
       extend ActiveSupport::Concern
 
-      has_many :fanouts, as: :act, class_name: 'Tekeya::Fanout', dependent: :destroy
+      
 
       included do
         belongs_to    :entity, polymorphic: true, autosave: true
         belongs_to    :author, polymorphic: true, autosave: true
         has_many      :attachments, as: :attache, class_name: 'Tekeya::Attachment'
-
+        has_many :fanouts, as: :act, class_name: 'Tekeya::Fanout', dependent: :destroy
+        
         before_create do |act|
           act.author ||= act.entity
         end
