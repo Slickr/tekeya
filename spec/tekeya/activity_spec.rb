@@ -10,13 +10,16 @@ describe "Tekeya" do
       @user2.track(@user)
       @user3.track(@user)
 
+
       # Normal Activities (1 & 2 should be grouped)
       @act1 = @user.activities.liked Fabricate(:status), Fabricate(:status)
       @act2 = @user.activities.liked Fabricate(:status)
       @act3 = @user.activities.shared Fabricate(:status)
 
       # Created before the grouping interval
+      @status = Fabricate(:status)
       @act4 = @user.activities.new activity_type: :liked, attachments: [Fabricate.build(:attachment)]
+      @act4.attachments.first.attachable = @status
       @act4.stub(:current_time_from_proper_timezone => @act1.created_at - 20.minutes)
       @act4.save!
 
@@ -40,7 +43,14 @@ describe "Tekeya" do
       @act5.cached_in_redis?.should == true
     end
 
-
+    it "should add the activity to the owner's profile feed and group activities of the same type within 15 min" do
+     
+      id_array = @user.profile_feed.map(&:activity_id)
+      id_array.include?(@act1.id.to_s).should == true
+      id_array.include?(@act3.id.to_s).should == true
+      id_array.include?(@act4.id.to_s).should == true
+      id_array.include?(@act5.id.to_s).should == true
+    end
 
     it "should not save the activity in the DB if its grouped with another" do
       @act2.persisted?.should_not == true
@@ -112,6 +122,8 @@ describe "Tekeya" do
       end
 
       it "should remove the activity from the profile cache when its deleted from the db" do 
+
+
         id_array = @user.profile_feed.map(&:activity_id)
         id_array.include?(@act1.id.to_s).should_not == true
         id_array.include?(@act3.id.to_s).should_not == true

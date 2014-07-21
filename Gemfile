@@ -4,7 +4,7 @@ gemspec
 
 group :development do
   gem "rails"     , ">= 3.2.6"
-  #gem 'debugger'  , '~> 1.2.0'
+  gem 'debugger'  
   gem 'yard'      , '~> 0.8.2.1'
   gem 'bluecloth'
   gem 'guard-rspec'
@@ -14,7 +14,7 @@ group :development do
 end
 
 group :test do
-  gem 'rspec'             , '~> 2.14.0'
+  gem 'rspec'            
   gem 'database_cleaner'  , '~> 1.2.0'
   gem 'fabrication'       , '~> 2.9.8'
   gem 'faker'             , '~> 1.1.2'
