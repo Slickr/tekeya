@@ -6,18 +6,6 @@ module Tekeya
         class ActivityFanout
           include Tekeya::Feed::Activity::Resque
 
-          def self.id_from_activity_key(activity_key)
-            index_of_second_colon = activity_key.index(':', 9)
-            id = activity_key[9...index_of_second_colon]
-            id
-          end
-          # def type_from_activity_key(activity_key)
-          #   akey = activity_key.reverse
-          #   index_of_first_colon = akey.index(':')
-          #   index_of_second_colon = akey.index(':', index_of_first_colon + 1)
-          #   type = akey[index_of_first_colon+1...index_of_second_colon]
-          #   type.reverse
-          # end
 
           @queue = :activity_queue
 
@@ -26,12 +14,18 @@ module Tekeya
             # get the entity class
             entity_type = entity_type.safe_constantize
             entity = entity_type.where(entity_type.entity_primary_key.to_sym => entity_id).first
-            # we only need the feed keys of the trackers
 
-
-            
-            fanouts = entity.trackers if fanouts.nil? || fanouts.empty? 
-            entity_trackers_feeds = entity.trackers.map(&:feed_key)
+            # we only need the feed keys of the fans
+            # extracting fans info from fanouts hashes
+            fans = []
+            fanouts.each do |f|
+              entity_type = f["entity_type"].safe_constantize
+              entity = entity_type.where(entity_type.entity_primary_key.to_sym => f["entity_id"].to_i).first
+              fans << entity
+            end
+            # fallback to entity's trackers if no customized fans are provided
+            fans = entity.trackers if fans.nil? || fans.empty? 
+            entity_trackers_feeds = fans.map(&:feed_key)
             # keep track of the keys we delete in the trim operation for garbage collection
             removed_keys = []
 

@@ -9,14 +9,25 @@ module Tekeya
         belongs_to    :entity, polymorphic: true, autosave: true
         belongs_to    :author, polymorphic: true, autosave: true
         has_many      :attachments, as: :attache, class_name: 'Tekeya::Attachment'
-        has_many      :fanouts, as: :act, class_name: 'Tekeya::Fanout'
+
+        
+        has_many      :fanouts, as: :act, class_name: 'Tekeya::Fanout' do
+          def customised_fanout_for(fans)
+            Tekeya::Fanout.destroy_all
+            fans.each do |fan|
+             create(entity: fan)
+            end
+          end           
+        end  
 
         before_create do |act|
           act.author ||= act.entity
         end
         before_create :group_activities
 
-        after_create  :write_activity_in_redis
+        after_create do |act| 
+          write_activity_in_redis unless act.customised_fanout
+        end  
         after_destroy :delete_activity_from_redis
 
         accepts_nested_attributes_for :attachments
@@ -33,7 +44,12 @@ module Tekeya
         ::Tekeya.redis.scard(activity_key) > 0
       end
 
+      #used only in case of customised fanout
 
+      def publish
+        write_activity_in_redis
+        fanouts.destroy_all
+      end  
 
       # Approximates the timestamp to the nearest 15 minutes for grouping activities
       #
@@ -101,8 +117,8 @@ module Tekeya
           ::Tekeya::Feed::Activity::Resque::ActivityFanout.write_to_feed(self.entity.profile_feed_key, tscore, akey)
           ::Tekeya::Feed::Activity::Resque::ActivityFanout.write_to_feed(self.entity.feed_key, tscore, akey)
         end
-
-        ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::ActivityFanout, self.entity_id, self.entity_type, akey, tscore)
+        
+        ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::ActivityFanout, self.entity_id, self.entity_type, akey, tscore, self.fanouts)
       end
 
       # @private

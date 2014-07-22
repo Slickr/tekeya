@@ -25,6 +25,9 @@ describe "Tekeya" do
 
       # Manually not grouped
       @act5 = @user.activities.liked Fabricate(:status), group: false
+      #customized fanout
+      @act6 = @user.activities.liked Fabricate(:status), group: false, customised_fanout: true
+
     end
 
     it "should return the same aggregate key" do 
@@ -60,6 +63,14 @@ describe "Tekeya" do
       @act1.reload
       (@act1.attachments & @act2.attachments).should == @act2.attachments
     end
+
+    it "should fanout activities to the activity fanouts IF defined otherwise fanout to entity's trackers" do
+      @user4 = Fabricate(:user)
+      @act6.fanouts.customised_fanout_for([@user,@user2,@user4])
+      @act6.publish
+      array = (@user4.feed.map(&:activity_id) + @user3.feed.map(&:activity_id) + @user2.feed.map(&:activity_id)).uniq
+      array.include?(@act6.id.to_s).should == true
+    end  
 
     it "should fanout activities to the entity's trackers" do
       id_array = (@user2.feed.map(&:activity_id) + @user3.feed.map(&:activity_id)).uniq

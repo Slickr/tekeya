@@ -6,7 +6,7 @@ class CreateActivities < ActiveRecord::Migration
       t.string  :entity_type, null: false
       t.integer :author_id, null: false
       t.string  :author_type, null: false
-      
+      t.boolean :customised_fanout, default: false
       t.timestamps
     end
   end
