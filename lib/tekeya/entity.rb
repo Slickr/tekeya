@@ -40,7 +40,7 @@ module Tekeya
               attachments << ::Tekeya::Attachment.new(attachable: attachable)
             end
 
-            create(activity_type: meth, attachments: attachments, group_with_recent: options[:group].nil? ? true : options[:group], customised_fanout: options[:customised_fanout].nil? ? false : options[:customised_fanout])
+            create(activity_type: meth, attachments: attachments, group_with_recent: options[:group].nil? ? true : options[:group], author: options[:author], customised_fanout: options[:customised_fanout].nil? ? false : options[:customised_fanout])
           else
             super
           end
