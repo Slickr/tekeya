@@ -9,11 +9,8 @@ module Tekeya
         belongs_to    :entity, polymorphic: true, autosave: true
         belongs_to    :author, polymorphic: true, autosave: true
         has_many      :attachments, as: :attache, class_name: 'Tekeya::Attachment'
-
-        
         has_many      :fanouts, as: :act, class_name: 'Tekeya::Fanout' do
           def customised_fanout_for(fans)
-            Tekeya::Fanout.destroy_all
             fans.each do |fan|
              create(entity: fan)
             end
@@ -48,7 +45,6 @@ module Tekeya
 
       def publish
         write_activity_in_redis
-        fanouts.destroy_all
       end  
 
       # Approximates the timestamp to the nearest 15 minutes for grouping activities

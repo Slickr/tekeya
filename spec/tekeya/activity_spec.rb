@@ -66,7 +66,7 @@ describe "Tekeya" do
 
     it "should fanout activities to the activity fanouts IF defined otherwise fanout to entity's trackers" do
       @user4 = Fabricate(:user)
-      @act6.fanouts.customised_fanout_for([@user,@user2,@user4])
+      @act6.fanouts.customised_fanout_for(User.all)
       @act6.publish
       array = (@user4.feed.map(&:activity_id) + @user3.feed.map(&:activity_id) + @user2.feed.map(&:activity_id)).uniq
       array.include?(@act6.id.to_s).should == true
