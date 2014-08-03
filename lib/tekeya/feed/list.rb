@@ -4,8 +4,8 @@ module Tekeya
 	    extend ActiveSupport::Concern
 	      
 	      included do 
-	      	belongs_to :owner, :polymorphic => true
-	      	has_many :listings, :class_name => '::Tekeya::Listing'
+	      	belongs_to :owner, :polymorphic => true, autosave: true
+	      	has_many :listings, :class_name => '::Tekeya::Listing', :dependent => :destroy
 	      	def members
 	      		members = []
 	      		listings.each do |listing|
