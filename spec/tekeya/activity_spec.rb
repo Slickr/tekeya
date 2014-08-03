@@ -86,13 +86,22 @@ describe "Tekeya" do
       @list = @user3.owned_lists.create_list('Family')
       @user2.track(@user3)
       @user.track(@user3)
+      @user4 = Fabricate(:user)
+      @user4.track(@user3)
       @user3.owned_lists.add_many_members_to_list([@user2,@user], @list)
       @act8 = @user3.activities.liked(Fabricate(:status), fan_to: @list.id)
       id_array_2 = @user2.feed.map(&:activity_id)
       id_array_2.include?(@act8.id.to_s).should == true
       id_array_3 = @user.feed.map(&:activity_id)
       id_array_3.include?(@act8.id.to_s).should == true
+      id_array_4 = @user4.feed.map(&:activity_id)
+      id_array_4.include?(@act8.id.to_s).should == false
+      @user5 = Fabricate(:user)
+      @user5.track(@user3)
+      id_array_5 = @user4.feed.map(&:activity_id)
+      id_array_5.include?(@act8.id.to_s).should == false
     end 
+
 
     describe "invalid profile feed cache" do
       it "should return profile activities from the DB when the profile cache is empty" do
