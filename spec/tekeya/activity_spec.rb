@@ -94,22 +94,6 @@ describe "Tekeya" do
       id_array_3.include?(@act8.id.to_s).should == true
     end 
 
-    it "should ay 7aga" do
-      @list = @user3.owned_lists.create_list('Family')
-      @user2.track(@user3)
-      @user.track(@user3)
-      @user3.owned_lists.add_many_members_to_list([@user], @list)
-      @act8 = @user3.activities.liked(Fabricate(:status), fan_to: @list.id)
-      @user2.untrack(@user3).should == true
-      id_array_3 = @user.feed.map(&:activity_id)
-      id_array_3.include?(@act8.id.to_s).should == true
-      @user.untrack(@user3)
-      id_array_3 = @user.feed.map(&:activity_id)
-      id_array_3.include?(@act8.id.to_s).should == false
-      id_array_2 = @user2.feed.map(&:activity_id)
-      id_array_2.include?(@act8.id.to_s).should == false
-    end 
-
     describe "invalid profile feed cache" do
       it "should return profile activities from the DB when the profile cache is empty" do
         ::Tekeya.redis.del(@user.profile_feed_key)
