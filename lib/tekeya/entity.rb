@@ -42,8 +42,8 @@ module Tekeya
         end  
 
         def add_member_to_list(member, list)
-          return unless include?(list)
-          return unless member.tracks?(list.owner)
+          return 'Not owned'unless include?(list)
+          return 'Does not track owner'unless member.tracks?(list.owner)
           ::Tekeya::Listing.create(entity: member, list: list)
         end
 
