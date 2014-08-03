@@ -60,6 +60,68 @@ describe "Tekeya" do
     end
 
     describe "relations" do
+
+      it "should be able to create a new list as an owner" do
+        @list = @user.owned_lists.create_list('Family')
+        owned_lists_ids = @user.owned_lists.map(&:id)
+        owned_lists_ids.include?(@list.id).should == true
+      end
+
+      it "should not be able to create a list with an existing name" do
+        @list = @user.owned_lists.create_list('Family')
+        @list2 = @user.owned_lists.create_list('Family')
+        @user.owned_lists.include?(@list).should == true
+        @user.owned_lists.include?(@list2).should == false
+      end
+
+      it "should be able to mark a list as deleted" do
+        @list =  @user.owned_lists.create_list('Family')
+        @user.owned_lists.mark_as_deleted(@list)
+        @list.deleted?.should == true
+      end
+
+
+
+      it "should be able to add a new member to the list if the new member is a tracker" do
+        @list = @user.owned_lists.create_list('Family')
+        @user2.track(@user)
+        @user.owned_lists.add_member_to_list(@user2, @list)
+        @list.members.include?(@user2).should == true
+      end 
+
+      it "should not be able to add a new member to the list if the new member is not a tracker" do
+        @list = @user.owned_lists.create_list('Family')
+        @user.owned_lists.add_member_to_list(@user2, @list)
+        @list.members.include?(@user2).should == false
+      end 
+
+      it "should be able to leave a list" do
+        @list = @user.owned_lists.create_list('Family')
+        @user2.track(@user)
+        @user.owned_lists.add_member_to_list(@user2, @list)
+        @list.members.include?(@user2).should == true
+        @user2.listings.leave(@list)
+        @list.members.include?(@user2).should == false
+      end
+
+      it "should be able to remove a member from an owned list" do
+        @list = @user.owned_lists.create_list('Family')
+        @user2.track(@user)
+        @user.owned_lists.add_member_to_list(@user2, @list)
+        @list.members.include?(@user2).should == true
+        @user.owned_lists.remove_member_from_list(@user2, @list)
+        @list.members.include?(@user2).should == false
+      end
+
+      it "should leave lists after untracking owner of lists" do
+        @list = @user.owned_lists.create_list('Family')
+        @user2.track(@user)
+        @user.owned_lists.add_member_to_list(@user2, @list)
+        @list.members.include?(@user2).should == true
+        @user2.untrack(@user)
+        @list.members.include?(@user2).should == false
+      end  
+
       it "should track another entity" do
         @user.track(@user2).should == true
         @user.tracks?(@user2).should == true

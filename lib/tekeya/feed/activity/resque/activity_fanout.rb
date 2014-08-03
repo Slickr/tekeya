@@ -10,7 +10,7 @@ module Tekeya
           @queue = :activity_queue
 
           # @private
-          def self.perform(entity_id, entity_type, activity_key, score, fanouts = nil)
+          def self.perform(entity_id, entity_type, activity_key, score, fanouts = nil, fan_to)
             # get the entity class
             entity_type = entity_type.safe_constantize
             entity = entity_type.where(entity_type.entity_primary_key.to_sym => entity_id).first
@@ -18,13 +18,27 @@ module Tekeya
             # we only need the feed keys of the fans
             # extracting fans info from fanouts hashes
             fans = []
-            fanouts.each do |f|
-              entity_type = f["entity_type"].safe_constantize
-              entity = entity_type.where(entity_type.entity_primary_key.to_sym => f["entity_id"].to_i).first
-              fans << entity
-            end
-            # fallback to entity's trackers if no customized fans are provided
-            fans = entity.trackers if fans.nil? || fans.empty? 
+            if fanouts && !fanouts.empty?
+              fanouts.each do |f|
+                entity_type = f["entity_type"].safe_constantize
+                entity = entity_type.where(entity_type.entity_primary_key.to_sym => f["entity_id"].to_i).first
+                fans << entity
+              end
+            elsif fan_to != 0 && fan_to
+              list = nil
+              lists = entity.owned_lists
+              lists.each do |l|
+                if l.id == fan_to
+                  list = l
+                  break
+                end  
+              end  
+              fans = list.members
+            else
+              fans = entity.trackers
+            end    
+
+
             entity_trackers_feeds = fans.map(&:feed_key)
             # keep track of the keys we delete in the trim operation for garbage collection
             removed_keys = []

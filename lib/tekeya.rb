@@ -38,6 +38,8 @@ module Tekeya
     autoload :Attachment
     autoload :Notification
     autoload :Fanout
+    autoload :List
+    autoload :Listing
 
 
     module Activity

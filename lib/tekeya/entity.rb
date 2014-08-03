@@ -12,7 +12,54 @@ module Tekeya
       # default primary key
       define_tekeya_primary_key :id
 
+      has_many :listings, as: :entity, class_name: "::Tekeya::Listing" do
+        def leave(list)
+          where(:list_id => list.id).each do |listing|
+            listing.destroy
+            list.listings.delete(listing)
+          end
+        end 
+      end  
+      has_many :lists, :through => :listings, class_name: "::Tekeya::List" do
+        def is_member_in_lists_owned_by?(entity)
+          where(:owner_id => entity.id, :owner_type => entity.class.to_s).any?
+        end
+      end 
+      has_many :owned_lists, as: :owner, class_name: "::Tekeya::List", :dependent => :destroy do
+        def create_list(name)
+          return 'Name already exists.' if name_already_exists(name)
+          create(name: name)
+        end
+
+        def name_already_exists(name)
+          names = where(:deleted => false).map(&:name).map(&:downcase)
+          return names.include?(name.downcase)
+        end
+
+        def remove_member_from_list(member, list)
+          return unless include?(list)
+          member.listings.leave(list)
+        end  
+
+        def add_member_to_list(member, list)
+          return unless include?(list)
+          return unless member.tracks?(list.owner)
+          ::Tekeya::Listing.create(entity: member, list: list)
+        end
+
+        def add_many_members_to_list(members, list)
+          members.each do |member|
+            add_member_to_list(member, list)
+          end  
+        end
+
+        def mark_as_deleted(list)
+          return unless include?(list)
+          list.mark_as_deleted
+        end  
+      end  
       # define the relation with the activity
+
       has_many :fanouts, as: :entity, class_name: "::Tekeya::Fanout"
       has_many :activities, as: :entity, class_name: "::Tekeya::Activity", dependent: :destroy do
         # Returns activities dating up to 10 days in the past
@@ -39,8 +86,10 @@ module Tekeya
             args.each do |attachable|
               attachments << ::Tekeya::Attachment.new(attachable: attachable)
             end
-
-            create(activity_type: meth, attachments: attachments, group_with_recent: options[:group].nil? ? true : options[:group], author: options[:author], customised_fanout: options[:customised_fanout].nil? ? false : options[:customised_fanout])
+            fan_to_id = 0
+            fan_to_id = options[:fan_to] if options[:fan_to]
+            
+            create(activity_type: meth, attachments: attachments, group_with_recent: options[:group].nil? ? true : options[:group], author: options[:author], customised_fanout: options[:customised_fanout].nil? ? false : options[:customised_fanout], fan_to: fan_to_id)
           else
             super
           end
@@ -145,7 +194,7 @@ module Tekeya
         ret = add_tekeya_relation(self, entity, :tracks)
 
         if ret
-          ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::FeedCopy, entity.profile_feed_key, self.feed_key)
+        # ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::FeedCopy, entity.profile_feed_key, self.feed_key)
           
           activity = self.activities.tracked(entity)
           entity.notifications.tracked_by self if notify
@@ -188,7 +237,12 @@ module Tekeya
       run_callbacks :untrack_entity do
         check_if_tekeya_entity(entity)
         raise ::Tekeya::Errors::TekeyaRelationNonExistent.new("Can't untrack an untracked entity") unless self.tracks?(entity)
-
+        if lists.is_member_in_lists_owned_by?(entity)
+          lists = entity.owned_lists.select {|l| l.has_member?(self)}
+          lists.each do |list|
+            listings.leave(list)
+          end  
+        end  
         ret = delete_tekeya_relation(self, entity, :tracks)
         
         ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::UntrackFeed, entity.profile_feed_key, self.feed_key) if ret

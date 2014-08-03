@@ -38,6 +38,8 @@ describe "Tekeya" do
       @act1.activity_key.should_not == @act3.activity_key
     end
 
+
+
     it "should create an aggregate in redis" do
       @act1.cached_in_redis?.should == true
       @act2.cached_in_redis?.should == true
@@ -79,6 +81,34 @@ describe "Tekeya" do
       id_array.include?(@act4.id.to_s).should == true
       id_array.include?(@act5.id.to_s).should == true
     end
+
+    it "should fanout activities to the entity's desired list IF defined" do
+      @list = @user3.owned_lists.create_list('Family')
+      @user2.track(@user3)
+      @user.track(@user3)
+      @user3.owned_lists.add_many_members_to_list([@user2,@user], @list)
+      @act8 = @user3.activities.liked(Fabricate(:status), fan_to: @list.id)
+      id_array_2 = @user2.feed.map(&:activity_id)
+      id_array_2.include?(@act8.id.to_s).should == true
+      id_array_3 = @user.feed.map(&:activity_id)
+      id_array_3.include?(@act8.id.to_s).should == true
+    end 
+
+    it "should ay 7aga" do
+      @list = @user3.owned_lists.create_list('Family')
+      @user2.track(@user3)
+      @user.track(@user3)
+      @user3.owned_lists.add_many_members_to_list([@user], @list)
+      @act8 = @user3.activities.liked(Fabricate(:status), fan_to: @list.id)
+      @user2.untrack(@user3).should == true
+      id_array_3 = @user.feed.map(&:activity_id)
+      id_array_3.include?(@act8.id.to_s).should == true
+      @user.untrack(@user3)
+      id_array_3 = @user.feed.map(&:activity_id)
+      id_array_3.include?(@act8.id.to_s).should == false
+      id_array_2 = @user2.feed.map(&:activity_id)
+      id_array_2.include?(@act8.id.to_s).should == false
+    end 
 
     describe "invalid profile feed cache" do
       it "should return profile activities from the DB when the profile cache is empty" do
@@ -178,13 +208,13 @@ describe "Tekeya" do
         @user4.track(@user)
       end
 
-      it "should copy the feed of the tracked entity into the tracker's feed" do
-        id_array = @user4.feed.map(&:activity_id)
-        id_array.include?(@act1.id.to_s).should == true
-        id_array.include?(@act3.id.to_s).should == true
-        id_array.include?(@act4.id.to_s).should == true
-        id_array.include?(@act5.id.to_s).should == true
-      end
+      # it "should copy the feed of the tracked entity into the tracker's feed" do
+      #   id_array = @user4.feed.map(&:activity_id)
+      #   id_array.include?(@act1.id.to_s).should == true
+      #   id_array.include?(@act3.id.to_s).should == true
+      #   id_array.include?(@act4.id.to_s).should == true
+      #   id_array.include?(@act5.id.to_s).should == true
+      # end
     end
   end
 end
