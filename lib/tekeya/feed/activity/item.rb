@@ -17,7 +17,7 @@ module Tekeya
 
         def eligible_to_see
           if @activity_fan_to != "0"
-            @actor.owned_lists.where(:id => @activity_fan_to.to_i).members
+            @actor.owned_lists.where(:id => @activity_fan_to.to_i).first.members
           elsif @activity_customised_fanout
             act = ::Tekeya::Activity.find(@activity_id)
             act.fanouts.map(&:entity)
