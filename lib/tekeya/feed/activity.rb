@@ -87,7 +87,7 @@ module Tekeya
         k[6] = self.activity_type
         k[7] = score(self.created_at)
         k[8] = self.fan_to
-        k[9] = self.fanouts
+        k[9] = self.customised_fanout
         k.join(':')
       end
 
