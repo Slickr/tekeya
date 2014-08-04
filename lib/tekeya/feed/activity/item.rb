@@ -15,6 +15,15 @@ module Tekeya
           @timestamp = timestamp
         end
 
+        def eligible_to_see
+          if @activity_fan_to != "0"
+            @actor.owned_lists.where(:id => @activity_fan_to.to_i)
+          elsif @activity_customised_fanout
+            act = ::Tekeya::Activity.find(@activity_id)
+            act.fanouts.map(&:entity)
+          end 
+        end  
+
         # Builds a feed item from a redis activity
         # 
         # @param  [String] key the aggregate key of the activity
