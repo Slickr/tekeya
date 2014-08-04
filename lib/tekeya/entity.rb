@@ -15,15 +15,17 @@ module Tekeya
       has_many :listings, as: :entity, class_name: "::Tekeya::Listing" do
         def leave(list)
           where(:list_id => list.id).each do |listing|
-            listing.destroy
-            list.listings.delete(listing)
+            list.listings.destroy(listing)
           end
         end 
       end  
       has_many :lists, :through => :listings, class_name: "::Tekeya::List" do
-        def is_member_in_lists_owned_by?(entity)
-          where(:owner_id => entity.id, :owner_type => entity.class.to_s).any?
+        def any_owned_by?(entity)
+          owned_by(entity).any?
         end
+        def owned_by(entity)
+          where(:owner_id => entity.id, :owner_type => entity.class.to_s)
+        end  
       end 
       has_many :owned_lists, as: :owner, class_name: "::Tekeya::List", :dependent => :destroy do
         def create_list(name)
@@ -238,10 +240,10 @@ module Tekeya
       run_callbacks :untrack_entity do
         check_if_tekeya_entity(entity)
         raise ::Tekeya::Errors::TekeyaRelationNonExistent.new("Can't untrack an untracked entity") unless self.tracks?(entity)
-        if lists.is_member_in_lists_owned_by?(entity)
-          lists = entity.owned_lists.select {|l| l.has_member?(self)}
+        if self.lists.any_owned_by?(entity)
+          lists = self.lists.owned_by(entity)
           lists.each do |list|
-            listings.leave(list)
+            self.listings.leave(list)
           end  
         end  
         ret = delete_tekeya_relation(self, entity, :tracks)

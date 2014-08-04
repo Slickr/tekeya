@@ -7,11 +7,7 @@ module Tekeya
 	      	belongs_to :owner, :polymorphic => true, autosave: true
 	      	has_many :listings, :class_name => '::Tekeya::Listing', :dependent => :destroy
 	      	def members
-	      		members = []
-	      		listings.each do |listing|
-	      			members << listing.entity
-	      		end
-	      		members
+	      		listings(force_reload = true).map(&:entity)
 	      	end	
 
 	      	def mark_as_deleted

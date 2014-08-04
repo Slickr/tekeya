@@ -2,11 +2,13 @@ module Tekeya
   module Feed
     module Activity
       class Item
-        attr_reader :activity_id, :activity_type, :attachments, :actor, :author, :timestamp
+        attr_reader :activity_id, :activity_type, :attachments, :actor, :author, :timestamp, :activity_fan_to, :activity_customised_fanout
 
-        def initialize(activity_id, activity_type, attachments, actor, author, timestamp)
+        def initialize(activity_id, activity_type, activity_fan_to, activity_customised_fanout,attachments, actor, author, timestamp)
           @activity_id = activity_id
           @activity_type = activity_type
+          @activity_fan_to = activity_fan_to
+          @activity_customised_fanout = activity_customised_fanout
           @attachments = attachments
           @actor = actor
           @author = author
@@ -24,6 +26,8 @@ module Tekeya
           act_id          = key_components[1]
           act_type        = key_components[6].to_sym
           act_time        = Time.at(key_components[7].to_i)
+          act_fan_to      = key_components[8].to_i
+          act_custom_fan  = key_components[9] 
           
           if act_actor.nil?
             actor_class = key_components[2].safe_constantize
@@ -44,7 +48,7 @@ module Tekeya
             
           }
 
-          return self.new(act_id, act_type, act_attachments, act_actor, act_author, act_time)
+          return self.new(act_id, act_type, act_fan_to, act_custom_fan, act_attachments, act_actor, act_author, act_time)
         end
 
         # Builds a feed item a DB activity
@@ -55,12 +59,14 @@ module Tekeya
         def self.from_db(activity, act_actor = nil)
           act_id            = activity.id.to_s
           act_type          = activity.activity_type.to_sym
+          act_fan_to        = activity.fan_to.to_s
+          act_custom_fan    = activity.customised_fanout
           act_time          = activity.created_at
           act_actor       ||= activity.entity
           act_author        = activity.author
           act_attachments   = activity.attachments.map(&:attachable)
 
-          return self.new(act_id, act_type, act_attachments, act_actor, act_author, act_time)
+          return self.new(act_id, act_type, act_fan_to, act_custom_fan, act_attachments, act_actor, act_author, act_time)
         end
       end
     end

@@ -86,9 +86,12 @@ module Tekeya
         k[5] = self.author.send(self.author.entity_primary_key)
         k[6] = self.activity_type
         k[7] = score(self.created_at)
+        k[8] = self.fan_to
+        k[9] = self.fanouts
         k.join(':')
       end
 
+     
 
 
       # @private

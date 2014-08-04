@@ -87,6 +87,22 @@ describe "Tekeya" do
         @user2.track(@user)
         @user.owned_lists.add_member_to_list(@user2, @list)
         @list.members.include?(@user2).should == true
+      end
+
+      it "should be able to know if it's a member in any of the lists owned by a particular entity" do
+        @list = @user.owned_lists.create_list('Family')
+        @user2.track(@user)
+        @user.owned_lists.add_member_to_list(@user2, @list)
+        @user2.lists.any_owned_by?(@user).should == true
+        @user2.listings.leave(@list)
+        @user2.lists.any_owned_by?(@user).should == false
+      end
+
+      it "should be able to retrieve owned lists by a particular entity in which it's a member" do
+        @list = @user.owned_lists.create_list('Family')
+        @user2.track(@user)
+        @user.owned_lists.add_member_to_list(@user2, @list)
+        @user2.lists.owned_by(@user).include?(@list).should == true
       end 
 
       it "should not be able to add a new member to the list if the new member is not a tracker" do
