@@ -8,8 +8,8 @@ module Tekeya
 
           belongs_to :entity, polymorphic: true 
           validates_presence_of :entity
-          has_many :allowed_privacy_listings, -> {where(:allowed => true)}, :class_name => '::Tekeya::PrivacyListing'
-          has_many :not_allowed_privacy_listings, -> {where(:allowed => false)}, :class_name => '::Tekeya::PrivacyListing'
+          has_many :allowed_privacy_listings, -> {where(:allowed => true)}, :class_name => '::Tekeya::PrivacyListing', dependent: :destroy
+          has_many :not_allowed_privacy_listings, -> {where(:allowed => false)}, :class_name => '::Tekeya::PrivacyListing', dependent: :destroy
           has_many :allowed_privacy_lists, :through => :allowed_privacy_listings, :source => :privacy_list
           has_many :not_allowed_privacy_lists, :through => :not_allowed_privacy_listings, :source => :privacy_list
           has_many :using_activities, :class_name => '::Tekeya::Activity'

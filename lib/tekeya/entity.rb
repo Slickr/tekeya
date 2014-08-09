@@ -16,7 +16,7 @@ module Tekeya
       # default primary key
       define_tekeya_primary_key :id
       
-      has_many :listings, as: :entity, class_name: "::Tekeya::Listing" do
+      has_many :listings, as: :entity, class_name: "::Tekeya::Listing", dependent: :destroy do
         def leave(list)
           where(:list_id => list.id).each do |listing|
             list.listings.destroy(listing)

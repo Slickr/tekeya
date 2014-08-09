@@ -5,7 +5,7 @@ module Tekeya
 				extend ActiveSupport::Concern
 				included do
 
-					has_many :privacy_settings, as: :entity, class_name: "::Tekeya::PrivacySetting" do
+					has_many :privacy_settings, as: :entity, class_name: "::Tekeya::PrivacySetting", dependent: :destroy do
 						def restricted_list
 							first.entity.owned_lists.restricted_list
 						end	
