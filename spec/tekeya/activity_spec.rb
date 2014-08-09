@@ -66,11 +66,11 @@ describe "Tekeya" do
       (@act1.attachments & @act2.attachments).should == @act2.attachments
     end
 
-    it "should fanout activities to the activity fanouts IF defined otherwise fanout to entity's trackers" do
+    it "should fanout activities to the activity fanouts IF defined otherwise fanout to entities defined by the activity's privacy_setting" do
       @user4 = Fabricate(:user)
       @act6.fanouts.customised_fanout_for(User.all)
       @act6.publish
-      array = (@user4.feed.map(&:activity_id) + @user3.feed.map(&:activity_id) + @user2.feed.map(&:activity_id)).uniq
+      array = (@user4.feed.map(&:activity_id))
       array.include?(@act6.id.to_s).should == true
     end  
 
@@ -82,25 +82,35 @@ describe "Tekeya" do
       id_array.include?(@act5.id.to_s).should == true
     end
 
-    it "should fanout activities to the entity's desired list IF defined" do
-      @list = @user3.owned_lists.create_list('Family')
-      @user2.track(@user3)
-      @user.track(@user3)
-      @user4 = Fabricate(:user)
-      @user4.track(@user3)
-      @user3.owned_lists.add_many_members_to_list([@user2,@user], @list)
-      @act8 = @user3.activities.liked(Fabricate(:status), fan_to: @list.id)
-      id_array_2 = @user2.feed.map(&:activity_id)
-      id_array_2.include?(@act8.id.to_s).should == true
-      id_array_3 = @user.feed.map(&:activity_id)
-      id_array_3.include?(@act8.id.to_s).should == true
-      id_array_4 = @user4.feed.map(&:activity_id)
-      id_array_4.include?(@act8.id.to_s).should == false
-      @user5 = Fabricate(:user)
-      @user5.track(@user3)
-      id_array_5 = @user4.feed.map(&:activity_id)
-      id_array_5.include?(@act8.id.to_s).should == false
-    end 
+    it "should fanout activities to the entity's desired entities according to is privacy(public case)" do
+      @user.privacy_settings.set_default_to_public
+      act = @user.activities.posted Fabricate(:status)
+      @user2.feed.map(&:activity_id).include?(act.id.to_s).should == true
+      @user3.feed.map(&:activity_id).include?(act.id.to_s).should == true
+    end
+
+    it "should fanout activities to the entity's desired entities according to is privacy(unrestriced_only case)" do
+      @user.privacy_settings.set_default_to_unrestricted_only
+      @user.owned_lists.restricted_list.add_member(@user2)
+      act = @user.activities.posted Fabricate(:status)
+      @user2.feed.map(&:activity_id).include?(act.id.to_s).should == false
+      @user3.feed.map(&:activity_id).include?(act.id.to_s).should == true
+    end
+
+    it "should fanout activities to the entity's desired entities according to is privacy(friends_only case)" do
+      @user.privacy_settings.set_default_to_friends_only
+      @user.track(@user2)
+      act = @user.activities.posted Fabricate(:status)
+      @user2.feed.map(&:activity_id).include?(act.id.to_s).should == true
+      @user3.feed.map(&:activity_id).include?(act.id.to_s).should == false
+    end
+
+    it "should fanout activities to the entity's desired entities according to is privacy(custom case)" do
+      @user.privacy_settings.set_default_to_custom(allowed_entities: [@user2])
+      act = @user.activities.posted Fabricate(:status)
+      @user2.feed.map(&:activity_id).include?(act.id.to_s).should == true
+      @user3.feed.map(&:activity_id).include?(act.id.to_s).should == false
+    end  
 
 
     describe "invalid profile feed cache" do

@@ -17,6 +17,13 @@ module Tekeya
     extend ActiveSupport::Autoload
     
     autoload :Group
+    module Privacy
+      extend ActiveSupport::Autoload
+
+      autoload :PrivacySetting
+      autoload :PrivacyListing
+      autoload :Secureable
+    end  
   end
 
   module Errors

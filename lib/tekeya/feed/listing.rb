@@ -4,8 +4,8 @@ module Tekeya
 	    extend ActiveSupport::Concern
 	      
 	      included do 
-	      	belongs_to :entity, :polymorphic => true, autosave: true
-	      	belongs_to :list, autosave: true
+	      	belongs_to :entity, :polymorphic => true
+	      	belongs_to :list
 	   	 	end
 
 	   	module ClassMethods

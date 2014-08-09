@@ -6,12 +6,16 @@ module Tekeya
     included do
       # Entities are attachable to activities
       include ::Tekeya::Feed::Attachable
+      include ::Tekeya::Entity::Privacy::Secureable
       # which field should be used as a primary key
       class_attribute :entity_primary_key
-
+      after_create do |entity|
+        entity.owned_lists.init_lists
+        entity.privacy_settings.init_privacy
+      end  
       # default primary key
       define_tekeya_primary_key :id
-
+      
       has_many :listings, as: :entity, class_name: "::Tekeya::Listing" do
         def leave(list)
           where(:list_id => list.id).each do |listing|
@@ -28,9 +32,30 @@ module Tekeya
         end  
       end 
       has_many :owned_lists, as: :owner, class_name: "::Tekeya::List", :dependent => :destroy do
-        def create_list(name)
+        def general_usage
+          where(privacy_only: false)
+        end
+
+        def privacy_only
+          where(privacy_only: true) 
+        end
+        def init_lists
+          create(name: 'Friends')
+          create(name: 'Restricted')
+        end
+        def restricted_list
+          find_by(name: 'Restricted')
+        end  
+        def friends_list
+          find_by(name: 'Friends')
+        end  
+
+        def add_entity_to_friends_list(entity)
+          add_member_to_list(entity, friends_list)
+        end  
+        def create_list(name, privacy_only=false)
           return 'Name already exists.' if name_already_exists(name)
-          create(name: name)
+          create(name: name, privacy_only: privacy_only)
         end
 
         def name_already_exists(name)
@@ -39,6 +64,7 @@ module Tekeya
         end
 
         def remove_member_from_list(member, list)
+          return "Not a member" unless list.has_member?(member)
           return unless include?(list)
           member.listings.leave(list)
         end  
@@ -89,10 +115,9 @@ module Tekeya
             args.each do |attachable|
               attachments << ::Tekeya::Attachment.new(attachable: attachable)
             end
-            fan_to_id = 0
-            fan_to_id = options[:fan_to] if options[:fan_to]
+
             
-            create(activity_type: meth, attachments: attachments, group_with_recent: options[:group].nil? ? true : options[:group], author: options[:author], customised_fanout: options[:customised_fanout].nil? ? false : options[:customised_fanout], fan_to: fan_to_id)
+            create(activity_type: meth, attachments: attachments, group_with_recent: options[:group].nil? ? true : options[:group], author: options[:author], customised_fanout: options[:customised_fanout].nil? ? false : options[:customised_fanout], privacy_setting: options[:privacy_setting])
           else
             super
           end
@@ -198,7 +223,11 @@ module Tekeya
 
         if ret
         # ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::FeedCopy, entity.profile_feed_key, self.feed_key)
-          
+          # check if entity tracks self too; if true, the entity will automatically be added to self Friends list and self will be added to the entity's Friends list
+          if entity.tracks?(self)
+            self.owned_lists.add_entity_to_friends_list(entity)
+            entity.owned_lists.add_entity_to_friends_list(self)
+          end 
           activity = self.activities.tracked(entity)
           entity.notifications.tracked_by self if notify
         end
@@ -245,6 +274,12 @@ module Tekeya
           lists.each do |list|
             self.listings.leave(list)
           end  
+        end
+
+        #check if entity is member in self's friends_list; if true, the entity will be removed
+        friends_list = owned_lists.friends_list
+        if friends_list.has_member?(entity)
+          owned_lists.remove_member_from_list(entity, friends_list)
         end  
         ret = delete_tekeya_relation(self, entity, :tracks)
         
@@ -359,6 +394,12 @@ module Tekeya
       end
     end
 
+    def profile_feed_for(entity, &blck)
+      acts = profile_feed(&blck)
+      acts.reject! {|act| !act.activity_privacy_setting.can_see_future_activities?(entity)}
+      acts 
+    end  
+
     # Returns the entity's recent activities
     #
     # @return [Array] the list of recent activities by this entity
@@ -426,6 +467,7 @@ module Tekeya
 
       return acts.sort { |a, b| b.timestamp <=> a.timestamp }
     end
+
 
     # @private
     # Returns a unique key for the entity's profile feed in redis

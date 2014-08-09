@@ -6,6 +6,7 @@ module Tekeya
       
 
       included do
+        belongs_to    :privacy_setting
         belongs_to    :entity, polymorphic: true, autosave: true
         belongs_to    :author, polymorphic: true, autosave: true
         has_many      :attachments, as: :attache, class_name: 'Tekeya::Attachment'
@@ -19,6 +20,7 @@ module Tekeya
 
         before_create do |act|
           act.author ||= act.entity
+          act.privacy_setting ||= act.entity.privacy_settings.default_privacy_setting
         end
         before_create :group_activities
 
@@ -86,12 +88,11 @@ module Tekeya
         k[5] = self.author.send(self.author.entity_primary_key)
         k[6] = self.activity_type
         k[7] = score(self.created_at)
-        k[8] = self.fan_to
-        k[9] = self.customised_fanout
+        k[8] = self.customised_fanout
+        k[9] = self.privacy_setting_id
         k.join(':')
       end
 
-     
 
 
       # @private
@@ -117,7 +118,7 @@ module Tekeya
           ::Tekeya::Feed::Activity::Resque::ActivityFanout.write_to_feed(self.entity.feed_key, tscore, akey)
         end
         
-        ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::ActivityFanout, self.entity_id, self.entity_type, akey, tscore, self.fanouts, self.fan_to)
+        ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::ActivityFanout, self.entity_id, self.entity_type, akey, tscore)
       end
 
       # @private
@@ -127,7 +128,7 @@ module Tekeya
           self.created_at = current_time_from_proper_timezone
           rel = self.class.where( created_at: self.created_at, activity_type: self.activity_type, 
                                   entity_id: self.entity_id, entity_type: entity_type, 
-                                  author_id: self.author_id, author_type: self.author_type)
+                                  author_id: self.author_id, author_type: self.author_type, privacy_setting_id: self.privacy_setting.id)
           if rel.count > 0
             activity = rel.first
             activity.attachments << self.attachments

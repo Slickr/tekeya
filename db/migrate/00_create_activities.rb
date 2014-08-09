@@ -7,7 +7,7 @@ class CreateActivities < ActiveRecord::Migration
       t.integer :author_id, null: false
       t.string  :author_type, null: false
       t.boolean :customised_fanout, default: false
-      t.integer :fan_to, default: 0
+      t.integer :privacy_setting_id, null: false
       t.timestamps
     end
   end

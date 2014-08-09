@@ -5,6 +5,7 @@ class CreateLists< ActiveRecord::Migration
     	t.string :owner_type, null: false
     	t.string :name, null: false
     	t.boolean :deleted, default: false
+    	t.boolean :privacy_only, default: false
       t.timestamps
     end
   end
