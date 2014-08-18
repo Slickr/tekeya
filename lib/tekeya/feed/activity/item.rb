@@ -15,25 +15,7 @@ module Tekeya
           @timestamp = timestamp
         end
 
-        # def eligible_to_see
-        #   if @activity_customised_fanout
-        #     act = ::Tekeya::Activity.find(@activity_id)
-        #     return act.fanouts.map(&:entity)
-        #   elsif !@activity_lists_ids.empty?
-        #     list_of_lists = []
-        #     @activity_lists_ids.each do |id|
-        #       list = @actor.owned_lists.where(:id => id).first
-        #       members = list.members if list
-        #       list_of_lists << members
-        #       return list_of_lists.flatten.uniq
-        #     end  
-        #   end
-        # end
-
-        # def is_eligible_to_see?(entity)
-        #   eligible = eligible_to_see
-        #   eligible.include?(entity)
-        # end  
+ 
 
         # Builds a feed item from a redis activity
         # 

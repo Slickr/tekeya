@@ -43,6 +43,10 @@ module Tekeya
         ::Tekeya.redis.scard(activity_key) > 0
       end
 
+      def is_eligible_to_see?(entity)
+        privacy_setting.can_see_my_future_posts?(entity)
+      end  
+
       #used only in case of customised fanout
 
       def publish
@@ -74,6 +78,8 @@ module Tekeya
           end
         end
       end
+
+
 
       # Returns an activity key for usage in caching
       #
