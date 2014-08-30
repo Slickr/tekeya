@@ -244,6 +244,9 @@ module Tekeya
       tekeya_relations_of(self, :tracks, type)
     end
 
+    def tracking_with_filter(field, value, type=nil)
+      tekeya_relations_with_filter(self, :tracks, type, false, field, value)
+    end 
     # Returns a list of entities tracking this entity
     #
     # @param  [String] type used to return a certain type of entities being tracked
@@ -251,6 +254,10 @@ module Tekeya
     def trackers(type = nil)
       tekeya_relations_of(self, :tracks, type, true)
     end
+
+    def trackers_with_filter(field, value, type = nil)
+      tekeya_relations_with_filter(self, :tracks, type, true, field, value)
+    end  
 
     # Checks if this entity is tracking the given entity
     #
@@ -395,9 +402,9 @@ module Tekeya
     end
 
     def profile_feed_for(entity, &blck)
-      acts = profile_feed(&blck)
-      acts.reject! {|act| !act.activity_privacy_setting.can_see_future_activities?(entity)}
-      acts 
+      feeds = profile_feed(&blck)
+      feeds.reject! {|feed| !feed.activity_privacy_setting.can_see_future_activities?(entity)}
+      feeds
     end  
 
     # Returns the entity's recent activities
@@ -495,6 +502,8 @@ module Tekeya
       return false
     end
 
+
+
     private
 
     # @private
@@ -536,7 +545,23 @@ module Tekeya
           entity_class.where(:"#{entity_class.entity_primary_key}" => entry.fromEntityId).first
         end
       end
+      relations.compact
+    end
 
+    def tekeya_relations_with_filter(from, relation_type, entity_type, reverse = false, field, value)
+      result_entity_class = entity_type.safe_constantize if entity_type
+        relations = unless reverse
+          ::Tekeya.relations.where(from.send(from.class.entity_primary_key), from.class.name, nil, entity_type, relation_type).entries.map do |entry|
+            entity_class = result_entity_class || entry.toEntityType.safe_constantize
+            entity_class.where(:"#{entity_class.entity_primary_key}" => entry.toEntityId).where("#{field} LIKE ?", "#{value}%").first
+          end
+        else
+          ::Tekeya.relations.where(nil, entity_type, from.send(from.class.entity_primary_key), from.class.name, relation_type).entries.map do |entry|
+            entity_class = result_entity_class || entry.fromEntityType.safe_constantize
+            entity_class.where(:"#{entity_class.entity_primary_key}" => entry.fromEntityId).where("#{field} LIKE ?", "#{value}%").first
+          end
+        end
+          
       relations.compact
     end
 

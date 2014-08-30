@@ -374,12 +374,34 @@ describe "Tekeya" do
           @user.join(@group)
           @user2.join(@group)
           @user3.join(@group)
+          @user4 = Fabricate(:user)
+          @user.track(@user4)
+          @user4.track(@user2)
           @company.track(@user2)
+          @user.track(@company)
         end
 
         it "should return tracked entities" do
           @user.tracking.include?(@user2).should == true
         end
+
+        it "should return tracked filtered entities" do
+          @user2.name = 'Youssef Hossam'
+          @company.name = 'Youssef Company'
+          @user2.save!
+          @company.save!
+          value = 'youss'
+          @user.tracking_with_filter('name', value).length.should == 2
+        end  
+
+        it "should return filtered trackers" do
+          @user.name = 'Youssef Hossam'
+          @company.name = 'Youssef Company'
+          @user.save!
+          @company.save!
+          value = 'yous'
+          @user2.trackers_with_filter('name', value).length.should == 2
+        end  
 
         it "should return trackers" do
           @user2.trackers.include?(@user).should == true

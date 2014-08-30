@@ -43,7 +43,7 @@ module Tekeya
         ::Tekeya.redis.scard(activity_key) > 0
       end
 
-      def is_eligible_to_see?(entity)
+      def can_be_viewed_by?(entity)
         privacy_setting.can_see_my_future_posts?(entity)
       end  
 
