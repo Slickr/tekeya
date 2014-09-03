@@ -27,6 +27,10 @@ module Tekeya
               privacy_id = akey[9]
               privacy_settings = ::Tekeya::PrivacySetting.find(privacy_id)
               fans = privacy_settings.will_fanout_activities_to
+              if privacy_settings.entity != entity
+                entity_settings = entity.privacy_settings.default_privacy_setting
+                fans.select! {|fan| fan.tracks?(entity) && entity_settings.can_see_future_activities?(fan)}
+              end
             end  
             # otherwise the activity is fanned out to the entity trackers
             
