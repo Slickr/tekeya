@@ -6,26 +6,32 @@ module Tekeya
 				included do
 
 					has_many :privacy_settings, as: :entity, class_name: "::Tekeya::PrivacySetting", dependent: :destroy do
+						
+						# Returns the restricted_list of the owner entity
 						def restricted_list
-							first.entity.owned_lists.restricted_list
-						end	
+							proxy_association.owner.owned_lists.restricted_list
+						end
+						# Returns the current default_setting	
 						def default_privacy_setting
 							where(:is_default => true).first
 						end
 
+						# Sets the default settings to be public
 						def set_default_to_public
 							public_setting = create(to_public: true)
-							set_default_privacy_setting_to(public_setting)		
+							set_default_privacy_setting_to(public_setting)
 						end
-
+						# Sets the default settings to friends_only.
 						def set_default_to_friends_only
 							friends_only = create(friends_only: true)
+							# Sets to default.
 							set_default_privacy_setting_to(friends_only)
 						end
 
+						# Sets the default settings to unrestricted_only
 						def set_default_to_unrestricted_only
 							unrestricted = create(unrestricted_only: true)
-							unrestricted.not_allowed_privacy_lists << restricted_list
+							# Sets to default.
 							set_default_privacy_setting_to(unrestricted)
 						end	
 						def set_default_to_custom(*args)

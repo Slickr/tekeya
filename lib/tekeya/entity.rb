@@ -16,76 +16,68 @@ module Tekeya
       # default primary key
       define_tekeya_primary_key :id
       
-      has_many :listings, as: :entity, class_name: "::Tekeya::Listing", dependent: :destroy do
-        def leave(list)
-          where(:list_id => list.id).each do |listing|
-            list.listings.destroy(listing)
-          end
-        end 
-      end  
-      has_many :lists, :through => :listings, class_name: "::Tekeya::List" do
+      has_many :listings, as: :entity, class_name: "::Tekeya::Listing", dependent: :destroy   
+
+      # Lists in which the entity is a member in.
+      has_many :member_lists, :through => :listings, class_name: "::Tekeya::List", source: :list do
+
+        # Returns {Boolean}, true if entity is member in any list owned by {params entity}, false otherwise.
         def any_owned_by?(entity)
           owned_by(entity).any?
         end
+
+        # Returns {Collection}, all lists in which entity is a member in and owned by {params entity}
         def owned_by(entity)
           where(:owner_id => entity.id, :owner_type => entity.class.to_s)
+        end
+
+        # Returns {Boolean}, true if entity successfully left {params list}, false otherwise.
+        def leave(list)
+          delete(list)
         end  
       end 
+
+      # Lists owned by the entity.
       has_many :owned_lists, as: :owner, class_name: "::Tekeya::List", :dependent => :destroy do
+
+        # Lists which are created by the entity and maybe used generally.
         def general_usage
           where(privacy_only: false)
         end
 
+        # Lists created by the privacy settings of the entity.
         def privacy_only
           where(privacy_only: true) 
         end
+
+        # Initializes the lists for the entity, those lists cannot be deleted.
         def init_lists
           create(name: 'Friends')
           create(name: 'Restricted')
         end
+        # Returns the restricted list.
         def restricted_list
           find_by(name: 'Restricted')
-        end  
+        end
+
+        # Returns the entity's friends list.
         def friends_list
           find_by(name: 'Friends')
         end  
 
         def add_entity_to_friends_list(entity)
-          add_member_to_list(entity, friends_list)
-        end  
+          friends_list.add_member(entity)
+        end
+
+        def add_entity_to_restricted_list(entity)
+          restricted_list.add_member(entity)
+        end
+
+        # @[Params name] the name of the list, @[Params privacy_only] whether the list is privacy usage only or not, defaults to false.
         def create_list(name, privacy_only=false)
-          return 'Name already exists.' if name_already_exists(name)
-          create(name: name, privacy_only: privacy_only)
+         create(name: name, privacy_only: privacy_only)
         end
 
-        def name_already_exists(name)
-          names = where(:deleted => false).map(&:name).map(&:downcase)
-          return names.include?(name.downcase)
-        end
-
-        def remove_member_from_list(member, list)
-          return "Not a member" unless list.has_member?(member)
-          return unless include?(list)
-          member.listings.leave(list)
-        end  
-
-        def add_member_to_list(member, list)
-          return 'Not owned' unless include?(list)
-          return 'Does not track owner' unless member.tracks?(list.owner)
-          return 'Already member' if list.has_member?(member)
-          ::Tekeya::Listing.create(entity: member, list: list)
-        end
-
-        def add_many_members_to_list(members, list)
-          members.each do |member|
-            add_member_to_list(member, list)
-          end  
-        end
-
-        def mark_as_deleted(list)
-          return unless include?(list)
-          list.mark_as_deleted
-        end  
       end  
       # define the relation with the activity
 
@@ -276,17 +268,19 @@ module Tekeya
       run_callbacks :untrack_entity do
         check_if_tekeya_entity(entity)
         raise ::Tekeya::Errors::TekeyaRelationNonExistent.new("Can't untrack an untracked entity") unless self.tracks?(entity)
-        if self.lists.any_owned_by?(entity)
-          lists = self.lists.owned_by(entity)
+        
+        # If self is member in any list owned by the untracked entity, self should leave the list.
+        if self.member_lists.any_owned_by?(entity)
+          lists = self.member_lists.owned_by(entity)
           lists.each do |list|
-            self.listings.leave(list)
+            self.member_lists.leave(list)
           end  
         end
 
-        #check if entity is member in self's friends_list; if true, the entity will be removed
+        # Check if entity is member in self's friends_list; if true, the entity will be removed
         friends_list = owned_lists.friends_list
         if friends_list.has_member?(entity)
-          owned_lists.remove_member_from_list(entity, friends_list)
+          friends_list.remove_member(entity)
         end  
         ret = delete_tekeya_relation(self, entity, :tracks)
         
@@ -403,7 +397,7 @@ module Tekeya
 
     def profile_feed_for(entity, &blck)
       feeds = profile_feed(&blck)
-      feeds.reject! {|feed| !feed.activity_privacy_setting.can_see_future_activities?(entity)}
+      feeds.select! {|feed| feed.can_be_viewed_by?(entity)}
       feeds
     end  
 

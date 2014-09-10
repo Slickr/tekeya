@@ -44,7 +44,7 @@ module Tekeya
       end
 
       def can_be_viewed_by?(entity)
-        privacy_setting.can_see_my_future_posts?(entity)
+        privacy_setting.can_see_future_activities?(entity)
       end  
 
       #used only in case of customised fanout
