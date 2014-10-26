@@ -17,9 +17,9 @@ module Tekeya
         # Returns activities dating up to 10 days in the past
         def recent
           c = unless ::Tekeya::Configuration.instance.feed_storage_orm.to_sym == :mongoid
-            where("created_at > ?", 10.days.ago).order('created_at DESC')
+            where("created_at > ?", 1.year.ago).order('created_at DESC')
           else
-            criteria.where(:created_at.gte => 10.days.ago).desc('created_at')
+            criteria.where(:created_at.gte => 1.year.ago).desc('created_at')
           end
 
           c = yield c if block_given?
