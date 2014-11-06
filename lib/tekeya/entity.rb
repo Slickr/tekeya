@@ -139,15 +139,15 @@ module Tekeya
     def track(entity, notify=true)
       run_callbacks :track_entity do
         check_if_tekeya_entity(entity)
-        raise ::Tekeya::Errors::TekeyaRelationAlreadyExists.new("Already tracking #{entity}") if self.tracks?(entity)
+        raise ::Tekeya::Errors::TekeyaRelationAlreadyExists.new("Already following #{entity}") if self.tracks?(entity)
 
         ret = add_tekeya_relation(self, entity, :tracks)
 
         if ret
           ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::FeedCopy, entity.profile_feed_key, self.feed_key)
           
-          activity = self.activities.tracked(entity)
-          entity.notifications.tracked_by self if notify
+          activity = self.activities.followed(entity)
+          entity.notifications.followed_by self if notify
         end
 
         return ret
@@ -186,7 +186,7 @@ module Tekeya
     def untrack(entity)
       run_callbacks :untrack_entity do
         check_if_tekeya_entity(entity)
-        raise ::Tekeya::Errors::TekeyaRelationNonExistent.new("Can't untrack an untracked entity") unless self.tracks?(entity)
+        raise ::Tekeya::Errors::TekeyaRelationNonExistent.new("Can't unfollow an unfollowed entity") unless self.tracks?(entity)
 
         ret = delete_tekeya_relation(self, entity, :tracks)
         
@@ -358,7 +358,7 @@ module Tekeya
         end
       else
         # Retrieve the activities from the DB
-        (self.tracking + [self]).each do |tracker|
+        self.tracking.each do |tracker|
           db_recent_activities = tracker.activities.recent(&blck)
           db_recent_activities.each do |activity|
             acts << ::Tekeya::Feed::Activity::Item.from_db(activity, tracker)
