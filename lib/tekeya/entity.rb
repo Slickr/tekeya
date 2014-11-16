@@ -458,7 +458,7 @@ module Tekeya
         end
       else
         # Retrieve the activities from the DB
-        (self.tracking + [self]).each do |tracker|
+        self.tracking.each do |tracker|
           db_recent_activities = tracker.activities.recent(&blck)
           db_recent_activities.each do |activity|
             acts << ::Tekeya::Feed::Activity::Item.from_db(activity, tracker)
