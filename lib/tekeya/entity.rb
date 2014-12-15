@@ -1,6 +1,7 @@
 module Tekeya
   # Represents a tekeya entity, the main building block of the engine
   module Entity
+    require 'will_paginate/array'
     extend ActiveSupport::Concern
 
     included do
@@ -84,11 +85,13 @@ module Tekeya
       has_many :fanouts, as: :entity, class_name: "::Tekeya::Fanout"
       has_many :activities, as: :entity, class_name: "::Tekeya::Activity", dependent: :destroy do
         # Returns activities dating up to 10 days in the past
-        def recent
+        def recent(page=nil, per_page=nil)
           c = unless ::Tekeya::Configuration.instance.feed_storage_orm.to_sym == :mongoid
-            where("created_at > ?", 1.year.ago).order('created_at DESC')
+            paginate(:page => page, :per_page => per_page)
+            # where("created_at > ?", 1.year.ago).order('created_at DESC')
           else
-            criteria.where(:created_at.gte => 1.year.ago).desc('created_at')
+            criteria.paginate(:page => page, :per_page => per_page)
+            # .desc('created_at')
           end
 
           c = yield c if block_given?
@@ -103,12 +106,9 @@ module Tekeya
 
           if is_activity
             attachments = []
-
             args.each do |attachable|
               attachments << ::Tekeya::Attachment.new(attachable: attachable)
             end
-
-            
             create(activity_type: meth, attachments: attachments, group_with_recent: options[:group].nil? ? true : options[:group], author: options[:author], customised_fanout: options[:customised_fanout].nil? ? false : options[:customised_fanout], privacy_setting: options[:privacy_setting])
           else
             super
@@ -357,7 +357,6 @@ module Tekeya
           activity = self.activities.joined(group)
           group.owner.notifications.joined_by self, subject: group if notify
         end
-
         return ret
       end
     end
@@ -404,7 +403,7 @@ module Tekeya
     # Returns the entity's recent activities
     #
     # @return [Array] the list of recent activities by this entity
-    def profile_feed(&blck)
+    def profile_feed(page=1, per_page=12, &blck)
       acts = []
       pkey = self.profile_feed_key
       recent_activities_count = ::Tekeya.redis.zcard(pkey)
@@ -412,7 +411,7 @@ module Tekeya
       # Check if the cache is not empty
       if recent_activities_count > 0 && !block_given?
         # Retrieve the aggregate keys from redis
-        acts_keys = ::Tekeya.redis.zrevrange(pkey, 0, -1)
+        acts_keys = ::Tekeya.redis.zrevrange(pkey, 0, -1).paginate(:page => page, :per_page => per_page)
         # Retrieve the aggregates
         acts_keys.each do |act_key|
           # Make `from_redis` only hit the db if author != entity
@@ -420,12 +419,12 @@ module Tekeya
           actor = if key_components[4] == self.class.to_s && key_components[5] == self.entity_primary_key
             self
           end
-
-          acts << ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
+          current_act = ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
+          (acts << current_act) if current_act.present? 
         end
       else
         # Retrieve the activities from the DB
-        db_recent_activities = self.activities.recent(&blck)
+        db_recent_activities = self.activities.recent(page, per_page, &blck)
         db_recent_activities.each do |activity|
           acts << ::Tekeya::Feed::Activity::Item.from_db(activity, activity.author)
         end
@@ -437,7 +436,7 @@ module Tekeya
     # Returns the entity's feed
     #
     # @return [Array] the list of activities for the entities tracked by this entity
-    def feed(&blck)
+    def feed(page=1, per_page=12, &blck)
       acts = []
       fkey = self.feed_key
       recent_activities_count = ::Tekeya.redis.zcard(fkey)
@@ -445,7 +444,7 @@ module Tekeya
       # Check if the cache is not empty
       if recent_activities_count > 0 && !block_given?
         # Retrieve the aggregate keys from redis
-        acts_keys = ::Tekeya.redis.zrevrange(fkey, 0, -1)
+        acts_keys = ::Tekeya.redis.zrevrange(fkey, 0, -1).paginate(:page => page, :per_page => per_page)
         # Retrieve the aggregates
         acts_keys.each do |act_key|
           # Make `from_redis` only hit the db if author != entity
@@ -454,12 +453,13 @@ module Tekeya
             self
           end
 
-          acts << ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
+          current_act = ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
+          (acts << current_act) if current_act.present? 
         end
       else
         # Retrieve the activities from the DB
-        (self.tracking + [self]).each do |tracker|
-          db_recent_activities = tracker.activities.recent(&blck)
+        self.tracking.each do |tracker|
+          db_recent_activities = tracker.activities.recent(page, per_page, &block)
           db_recent_activities.each do |activity|
             acts << ::Tekeya::Feed::Activity::Item.from_db(activity, tracker)
           end

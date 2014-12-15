@@ -3,9 +3,8 @@ module Tekeya
     module Activity
       extend ActiveSupport::Concern
 
-      
-
       included do
+        default_scope order('created_at DESC')
         belongs_to    :privacy_setting
         belongs_to    :entity, polymorphic: true, autosave: true
         belongs_to    :author, polymorphic: true, autosave: true
@@ -69,10 +68,10 @@ module Tekeya
           end
         else
           if from_time.present?
-            stamp = from_time.to_i
-
+            # stamp = from_time.to_i
+            return from_time
             # floors the timestamp to the nearest 15 minute
-            return (stamp.to_f / 15.minutes).floor * 15.minutes
+            # return (stamp.to_f / 15.minutes).floor * 15.minutes
           else
             return Time.now.to_i
           end
@@ -108,10 +107,6 @@ module Tekeya
         @group_with_recent.nil? ? true : @group_with_recent
       end
 
-      private
-
-      # @private
-      # Writes to the activity's aggregate set (a set of attachments associated with the activity)
       def write_activity_in_redis
         akey = activity_key
         tscore = score
@@ -126,6 +121,11 @@ module Tekeya
         
         ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::ActivityFanout, self.entity_id, self.entity_type, akey, tscore)
       end
+
+      private
+
+      # @private
+      # Writes to the activity's aggregate set (a set of attachments associated with the activity)
 
       # @private
       # Checks if the activity should be grouped and aborts the creation of a new record

@@ -52,12 +52,19 @@ module Tekeya
 
           act_attachments = ::Tekeya.redis.smembers(key).map{|act| 
             ActiveSupport::JSON.decode(act)
-          }.map{|att| 
-            att['attachable_type'].safe_constantize.find att['attachable_id']
-            
+          }.map{|att|
+            begin
+              att['attachable_type'].safe_constantize.find att['attachable_id']
+            rescue
+              nil
+            end
           }
-
-          return self.new(act_id, act_type, act_privacy, act_custom_fan, act_attachments, act_actor, act_author, act_time)
+          act_attachments.compact!
+          unless act_attachments.empty?
+            return self.new(act_id, act_type, act_privacy, act_custom_fan, act_attachments, act_actor, act_author, act_time)
+          else
+            return nil
+          end
         end
 
         # Builds a feed item a DB activity
