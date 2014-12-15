@@ -220,8 +220,8 @@ module Tekeya
             self.owned_lists.add_entity_to_friends_list(entity)
             entity.owned_lists.add_entity_to_friends_list(self)
           end 
-          activity = self.activities.tracked(entity)
-          entity.notifications.tracked_by self if notify
+          activity = self.activities.followed(entity)
+          entity.notifications.followed_by self if notify
         end
 
         return ret
