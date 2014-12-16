@@ -68,10 +68,10 @@ module Tekeya
           end
         else
           if from_time.present?
-            stamp = from_time.to_i
+            return from_time.to_i
             # return stamp
             # floors the timestamp to the nearest 15 minute
-            return (stamp.to_f / 15.minutes).floor * 15.minutes
+            # return (stamp.to_f / 15.minutes).floor * 15.minutes
           else
             return Time.now.to_i
           end
