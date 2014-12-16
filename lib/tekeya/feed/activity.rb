@@ -69,9 +69,9 @@ module Tekeya
         else
           if from_time.present?
             stamp = from_time.to_i
-            return stamp
+            # return stamp
             # floors the timestamp to the nearest 15 minute
-            # return (stamp.to_f / 15.minutes).floor * 15.minutes
+            return (stamp.to_f / 15.minutes).floor * 15.minutes
           else
             return Time.now.to_i
           end
@@ -109,7 +109,7 @@ module Tekeya
 
       def write_activity_in_redis
         akey = activity_key
-        tscore = score
+        tscore = score(self.created_at)
         attachments_json = self.attachments.map{ |att| att.to_json(root: false, only: [:attachable_id, :attachable_type]) }
 
         # write the activity to the aggregate set and the owner's feed
