@@ -423,7 +423,7 @@ module Tekeya
         end
       else
         # Retrieve the activities from the DB
-        db_recent_activities = self.activities.recent(page, per_page, &blck)
+        db_recent_activities = self.activities.recent(page, per_page)
         db_recent_activities.each do |activity|
           acts << ::Tekeya::Feed::Activity::Item.from_db(activity, activity.author)
         end
