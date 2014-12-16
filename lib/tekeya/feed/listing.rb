@@ -12,10 +12,6 @@ module Tekeya
 	      validate :is_tekeya_entity
 	     	validate :tracks_owner
 	      validates :entity_id, uniqueness: { scope: [:list_id, :entity_type]}
-	     	
-	      
-
-
 
 	      def is_tekeya_entity
 	      	unless entity.respond_to?(:is_tekeya_entity?)

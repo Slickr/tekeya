@@ -5,7 +5,6 @@ module Tekeya
         extend ActiveSupport::Concern
         included do
 
-
           belongs_to :entity, polymorphic: true 
           validates_presence_of :entity
           has_many :allowed_privacy_listings, -> {where(:allowed => true)}, :class_name => '::Tekeya::PrivacyListing', dependent: :destroy
