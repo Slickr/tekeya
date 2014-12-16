@@ -85,10 +85,9 @@ module Tekeya
       has_many :fanouts, as: :entity, class_name: "::Tekeya::Fanout"
       has_many :activities, as: :entity, class_name: "::Tekeya::Activity", dependent: :destroy do
         # Returns activities dating up to 10 days in the past
-        def recent(page=nil, per_page=nil)
+        def recent(page=1, per_page=12)
           c = unless ::Tekeya::Configuration.instance.feed_storage_orm.to_sym == :mongoid
             paginate(:page => page, :per_page => per_page)
-            # where("created_at > ?", 1.year.ago).order('created_at DESC')
           else
             criteria.paginate(:page => page, :per_page => per_page)
             # .desc('created_at')
@@ -459,7 +458,7 @@ module Tekeya
       else
         # Retrieve the activities from the DB
         self.tracking.each do |tracker|
-          db_recent_activities = tracker.activities.recent(page, per_page, &block)
+          db_recent_activities = tracker.activities.recent(page, per_page)
           db_recent_activities.each do |activity|
             acts << ::Tekeya::Feed::Activity::Item.from_db(activity, tracker)
           end
