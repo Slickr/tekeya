@@ -18,7 +18,6 @@ module Tekeya
         def can_be_viewed_by?(entity)
           @activity_privacy_setting.can_see_future_activities?(entity)
         end
- 
 
         # Builds a feed item from a redis activity
         # 

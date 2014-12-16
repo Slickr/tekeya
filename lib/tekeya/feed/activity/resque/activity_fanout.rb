@@ -6,7 +6,6 @@ module Tekeya
         class ActivityFanout
           include Tekeya::Feed::Activity::Resque
 
-
           @queue = :activity_queue
 
           # @private
