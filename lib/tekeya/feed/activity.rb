@@ -106,7 +106,7 @@ module Tekeya
         k[8] = self.customised_fanout
         k[9] = self.privacy_setting_id
         k.join(':')
-        p "Getting activity_key of Activity: #{key}"
+        p "Getting activity_key of Activity: #{k}"
         p "|>>"
       end
 
