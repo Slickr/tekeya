@@ -57,28 +57,38 @@ module Tekeya
       # @param  [Datetime] from_time the time to approximate
       # @return [Integer] the timestamp approximated to the nearest 15 minutes
       def score(from_time = nil)
+        p "Getting Score of Activity: #{self.id}"
+        p "||"
         if self.group_with_recent
           if from_time.present?
             stamp = from_time.to_i
-
+            returned_time = (stamp.to_f / 15.minutes).floor * 15.minutes
             # floors the timestamp to the nearest 15 minute
-            return (stamp.to_f / 15.minutes).floor * 15.minutes
+            p "Grouping & Time Passed: Floored the stamp to the nearest 15 min = #{returned_time}"
+            p "|>>"
+            return returned_time
           else
-            return current_time_from_proper_timezone.to_i
+            returned_time = current_time_from_proper_timezone.to_i
+            p "Grouping & Time Not Passed: Returned from proper time zone = #{returned_time}"
+            p "|>>"
+            return returned_time
+
           end
         else
           if from_time.present?
+            p "No Grouping & Time Passed: Floored the stamp to the nearest 15 min = #{from_time.to_i}"
+            p "|>>"
             return from_time.to_i
             # return stamp
             # floors the timestamp to the nearest 15 minute
             # return (stamp.to_f / 15.minutes).floor * 15.minutes
           else
+            p "No Grouping & Time Not Passed: Floored the stamp to the nearest 15 min = #{Time.now.to_i}"
+            p "|>>"
             return Time.now.to_i
           end
         end
       end
-
-
 
       # Returns an activity key for usage in caching
       #
@@ -92,13 +102,13 @@ module Tekeya
         k[4] = self.author_type
         k[5] = self.author.send(self.author.entity_primary_key)
         k[6] = self.activity_type
-        k[7] = score(self.created_at)
+        k[7] = score(self.created_at.to_i)
         k[8] = self.customised_fanout
         k[9] = self.privacy_setting_id
         k.join(':')
+        p "Getting activity_key of Activity: #{key}"
+        p "|>>"
       end
-
-
 
       # @private
       #
@@ -115,10 +125,12 @@ module Tekeya
         # write the activity to the aggregate set and the owner's feed
         ::Tekeya.redis.multi do
           write_aggregate
+          p "write_activity_in_redis:write_to_feed: self.entity.profile_feed_key: #{self.entity.profile_feed_key} + tscore: #{tscore} + akey: #{akey}"
           ::Tekeya::Feed::Activity::Resque::ActivityFanout.write_to_feed(self.entity.profile_feed_key, tscore, akey)
           ::Tekeya::Feed::Activity::Resque::ActivityFanout.write_to_feed(self.entity.feed_key, tscore, akey)
         end
-        
+        p "write_activity_in_redis:Resque::ActivityFanout: self.entity.profile_feed_key: #{self.entity.profile_feed_key} + tscore: #{tscore} + akey: #{akey}"
+        p "|>>"
         ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::ActivityFanout, self.entity_id, self.entity_type, akey, tscore)
       end
 
@@ -148,6 +160,8 @@ module Tekeya
       # @private
       # Deletes the activity's aggregate set when its deleted from the DB
       def delete_activity_from_redis
+        p "delete_activity_from_redis: self.activity_key: #{self.activity_key}"
+        p "|>>"
         ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::DeleteActivity, self.activity_key)
       end
 

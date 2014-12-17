@@ -72,16 +72,20 @@ module Tekeya
         # @param  [Tekeya::Entity] act_actor the activty actor; when nil the actor is retrieved from the activity
         # @return [Tekeya::Feed::Activity::Item] the feed item
         def self.from_db(activity, act_actor = nil)
-          act_id            = activity.id.to_s
-          act_type          = activity.activity_type.to_sym
-          act_privacy       = activity.privacy_setting
-          act_custom_fan    = activity.customised_fanout
-          act_time          = activity.created_at
-          act_actor       ||= activity.entity
-          act_author        = activity.author
-          act_attachments   = activity.attachments.map(&:attachable)
+          # begin
+            act_id            = activity.id.to_s
+            act_type          = activity.activity_type.to_sym
+            act_privacy       = activity.privacy_setting
+            act_custom_fan    = activity.customised_fanout
+            act_time          = activity.created_at
+            act_actor       ||= activity.entity
+            act_author        = activity.author
+            act_attachments   = activity.attachments.map(&:attachable)
 
-          return self.new(act_id, act_type, act_privacy, act_custom_fan, act_attachments, act_actor, act_author, act_time)
+            return self.new(act_id, act_type, act_privacy, act_custom_fan, act_attachments, act_actor, act_author, act_time)
+          # rescue
+          #   return nil
+          # end
         end
       end
     end

@@ -85,14 +85,13 @@ module Tekeya
       has_many :fanouts, as: :entity, class_name: "::Tekeya::Fanout"
       has_many :activities, as: :entity, class_name: "::Tekeya::Activity", dependent: :destroy do
         # Returns activities dating up to 10 days in the past
-        def recent(page=1, per_page=12)
+        def recent
           c = unless ::Tekeya::Configuration.instance.feed_storage_orm.to_sym == :mongoid
-            paginate(:page => page, :per_page => per_page)
+            where("created_at > ?", 1.month.ago)
           else
-            criteria.paginate(:page => page, :per_page => per_page)
+            criteria.where(:created_at.gte => 1.month.ago)
             # .desc('created_at')
           end
-
           c = yield c if block_given?
           c
         end
@@ -402,7 +401,7 @@ module Tekeya
     # Returns the entity's recent activities
     #
     # @return [Array] the list of recent activities by this entity
-    def profile_feed(page=1, per_page=12, &blck)
+    def profile_feed(page=1, per_page=16, &blck)
       acts = []
       pkey = self.profile_feed_key
       recent_activities_count = ::Tekeya.redis.zcard(pkey)
@@ -412,60 +411,80 @@ module Tekeya
         # Retrieve the aggregate keys from redis
         acts_keys = ::Tekeya.redis.zrevrange(pkey, 0, -1).paginate(:page => page, :per_page => per_page)
         # Retrieve the aggregates
-        acts_keys.each do |act_key|
+        acts_keys.compact.each do |act_key|
           # Make `from_redis` only hit the db if author != entity
           key_components = act_key.split(':')
           actor = if key_components[4] == self.class.to_s && key_components[5] == self.entity_primary_key
             self
           end
-          current_act = ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
-          (acts << current_act) if current_act.present? 
+          acts << ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
+          # p "   Getting Act Key: #{current_act.to_s}"
+          p "|>>"
+          return acts.compact
         end
       else
         # Retrieve the activities from the DB
-        db_recent_activities = self.activities.recent(page, per_page)
+        acts_list = []
+        db_recent_activities = self.activities.recent
         db_recent_activities.each do |activity|
-          acts << ::Tekeya::Feed::Activity::Item.from_db(activity, activity.author)
+          acts_list << [activity, activity.author]
         end
+        acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => page, :per_page => per_page)
+        acts_list.each do |act|
+          acts << ::Tekeya::Feed::Activity::Item.from_db(act[0], act[1])
+        end
+        p "|>>"
+        return acts.compact
       end
 
-      return acts.sort { |a, b| b.timestamp <=> a.timestamp }
+      # return acts.sort { |a, b| b.timestamp <=> a.timestamp }
     end
     
     # Returns the entity's feed
     #
     # @return [Array] the list of activities for the entities tracked by this entity
-    def feed(page=1, per_page=12, &blck)
+    def feed(page=1, per_page=16, &blck)
       acts = []
       fkey = self.feed_key
       recent_activities_count = ::Tekeya.redis.zcard(fkey)
-      
       # Check if the cache is not empty
       if recent_activities_count > 0 && !block_given?
+        p "Getting Entity #{self.id} feeds from Redis:"
         # Retrieve the aggregate keys from redis
         acts_keys = ::Tekeya.redis.zrevrange(fkey, 0, -1).paginate(:page => page, :per_page => per_page)
         # Retrieve the aggregates
-        acts_keys.each do |act_key|
+        acts_keys.compact.each do |act_key|
+          p "   Getting Act Key: #{act_key} |>>"
           # Make `from_redis` only hit the db if author != entity
           key_components = act_key.split(':')
           actor = if key_components[4] == self.class.to_s && key_components[5] == self.entity_primary_key
             self
           end
+          acts << ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
+          # p "   Getting Act Key: #{current_act.to_s}"
+          p "|>>"
+          return acts.compact
 
-          current_act = ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
-          (acts << current_act) if current_act.present? 
+          # (acts << current_act) if current_act.present? 
         end
       else
+        p "Getting Entity #{self.id} feeds from DB:"
         # Retrieve the activities from the DB
+        acts_list = []
         self.tracking.each do |tracker|
-          db_recent_activities = tracker.activities.recent(page, per_page)
+          db_recent_activities = tracker.activities.recent
           db_recent_activities.each do |activity|
-            acts << ::Tekeya::Feed::Activity::Item.from_db(activity, tracker)
+            acts_list << [activity, tracker]
           end
         end
+        acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => page, :per_page => per_page)
+        acts_list.each do |act|
+          acts << ::Tekeya::Feed::Activity::Item.from_db(act[0], act[1])
+        end
+        p "|>>"
+        return acts.compact
       end
-
-      return acts.sort { |a, b| b.timestamp <=> a.timestamp }
+      # return acts.sort { |a, b| b.timestamp <=> a.timestamp }.paginate(:page => page, :per_page => per_page)
     end
 
 
@@ -554,7 +573,6 @@ module Tekeya
             entity_class.where(:"#{entity_class.entity_primary_key}" => entry.fromEntityId).where("#{field} LIKE ?", "#{value}%").first
           end
         end
-          
       relations.compact
     end
 
