@@ -411,7 +411,7 @@ module Tekeya
         # Retrieve the aggregate keys from redis
         acts_keys = ::Tekeya.redis.zrevrange(pkey, 0, -1).paginate(:page => page, :per_page => per_page)
         # Retrieve the aggregates
-        acts_keys.compact.each do |act_key|
+        acts_keys.each do |act_key|
           # Make `from_redis` only hit the db if author != entity
           key_components = act_key.split(':')
           actor = if key_components[4] == self.class.to_s && key_components[5] == self.entity_primary_key
@@ -453,7 +453,7 @@ module Tekeya
         # Retrieve the aggregate keys from redis
         acts_keys = ::Tekeya.redis.zrevrange(fkey, 0, -1).paginate(:page => page, :per_page => per_page)
         # Retrieve the aggregates
-        acts_keys.compact.each do |act_key|
+        acts_keys.each do |act_key|
           p "   Getting Act Key: #{act_key} |>>"
           # Make `from_redis` only hit the db if author != entity
           key_components = act_key.split(':')
@@ -477,7 +477,7 @@ module Tekeya
             acts_list << [activity, tracker]
           end
         end
-        acts_list = acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => 1, :per_page => 16)
+        acts_list = acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => page, :per_page => per_page)
         acts_list.each do |act|
           acts << ::Tekeya::Feed::Activity::Item.from_db(act[0], act[1])
         end
