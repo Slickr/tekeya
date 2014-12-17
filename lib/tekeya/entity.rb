@@ -87,9 +87,9 @@ module Tekeya
         # Returns activities dating up to 10 days in the past
         def recent
           c = unless ::Tekeya::Configuration.instance.feed_storage_orm.to_sym == :mongoid
-            where("created_at > ?", 1.month.ago)
+            where("created_at > ?", 7.month.ago)
           else
-            criteria.where(:created_at.gte => 1.month.ago)
+            criteria.where(:created_at.gte => 7.month.ago)
             # .desc('created_at')
           end
           c = yield c if block_given?
@@ -429,7 +429,7 @@ module Tekeya
         db_recent_activities.each do |activity|
           acts_list << [activity, activity.author]
         end
-        acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => page, :per_page => per_page)
+        acts_list = acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => page, :per_page => per_page)
         acts_list.each do |act|
           acts << ::Tekeya::Feed::Activity::Item.from_db(act[0], act[1])
         end
@@ -471,13 +471,13 @@ module Tekeya
         p "Getting Entity #{self.id} feeds from DB:"
         # Retrieve the activities from the DB
         acts_list = []
-        self.tracking.each do |tracker|
+        User.first.tracking.each do |tracker|
           db_recent_activities = tracker.activities.recent
           db_recent_activities.each do |activity|
             acts_list << [activity, tracker]
           end
         end
-        acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => page, :per_page => per_page)
+        acts_list = acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => 1, :per_page => 16)
         acts_list.each do |act|
           acts << ::Tekeya::Feed::Activity::Item.from_db(act[0], act[1])
         end
