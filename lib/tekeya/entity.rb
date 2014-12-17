@@ -449,12 +449,12 @@ module Tekeya
       recent_activities_count = ::Tekeya.redis.zcard(fkey)
       # Check if the cache is not empty
       if recent_activities_count > 0 && !block_given?
-        p "Getting Entity #{self.id} feeds from Redis:"
+        # p "Getting Entity #{self.id} feeds from Redis:"
         # Retrieve the aggregate keys from redis
         acts_keys = ::Tekeya.redis.zrevrange(fkey, 0, -1).paginate(:page => page, :per_page => per_page)
         # Retrieve the aggregates
         acts_keys.each do |act_key|
-          p "   Getting Act Key: #{act_key} |>>"
+          # p "   Getting Act Key: #{act_key} |>>"
           # Make `from_redis` only hit the db if author != entity
           key_components = act_key.split(':')
           actor = if key_components[4] == self.class.to_s && key_components[5] == self.entity_primary_key
@@ -464,10 +464,10 @@ module Tekeya
           # p "   Getting Act Key: #{current_act.to_s}"
           # (acts << current_act) if current_act.present? 
         end
-        p "|>>"
+        # p "|>>"
         return acts
       else
-        p "Getting Entity #{self.id} feeds from DB:"
+        # p "Getting Entity #{self.id} feeds from DB:"
         # Retrieve the activities from the DB
         acts_list = []
         self.tracking.each do |tracker|
@@ -480,7 +480,7 @@ module Tekeya
         acts_list.each do |act|
           acts << ::Tekeya::Feed::Activity::Item.from_db(act[1], act[2])
         end
-        p "|>>"
+        # p "|>>"
         return acts
       end
       # return acts.sort { |a, b| b.timestamp <=> a.timestamp }.paginate(:page => page, :per_page => per_page)

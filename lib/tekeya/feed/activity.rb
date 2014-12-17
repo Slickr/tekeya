@@ -57,34 +57,33 @@ module Tekeya
       # @param  [Datetime] from_time the time to approximate
       # @return [Integer] the timestamp approximated to the nearest 15 minutes
       def score(from_time = nil)
-        p "Getting Score of Activity: #{self.id}"
-        p "||"
+        # p "Getting Score of Activity: #{self.id}"
+        # p "||"
         if self.group_with_recent
           if from_time.present?
             stamp = from_time.to_i
             returned_time = (stamp.to_f / 15.minutes).floor * 15.minutes
             # floors the timestamp to the nearest 15 minute
-            p "Grouping & Time Passed: Floored the stamp to the nearest 15 min = #{returned_time}"
-            p "|>>"
+            # p "Grouping & Time Passed: Floored the stamp to the nearest 15 min = #{returned_time}"
+            # p "|>>"
             return returned_time
           else
             returned_time = current_time_from_proper_timezone.to_i
-            p "Grouping & Time Not Passed: Returned from proper time zone = #{returned_time}"
-            p "|>>"
+            # p "Grouping & Time Not Passed: Returned from proper time zone = #{returned_time}"
+            # p "|>>"
             return returned_time
-
           end
         else
           if from_time.present?
-            p "No Grouping & Time Passed: Floored the stamp to the nearest 15 min = #{from_time.to_i}"
-            p "|>>"
+            # p "No Grouping & Time Passed: Floored the stamp to the nearest 15 min = #{from_time.to_i}"
+            # p "|>>"
             return from_time.to_i
             # return stamp
             # floors the timestamp to the nearest 15 minute
             # return (stamp.to_f / 15.minutes).floor * 15.minutes
           else
-            p "No Grouping & Time Not Passed: Floored the stamp to the nearest 15 min = #{Time.now.to_i}"
-            p "|>>"
+            # p "No Grouping & Time Not Passed: Floored the stamp to the nearest 15 min = #{Time.now.to_i}"
+            # p "|>>"
             return Time.now.to_i
           end
         end
@@ -106,8 +105,8 @@ module Tekeya
         k[8] = self.customised_fanout
         k[9] = self.privacy_setting_id
         k.join(':')
-        p "Getting activity_key of Activity: #{k}"
-        p "|>>"
+        # p "Getting activity_key of Activity: #{k}"
+        # p "|>>"
       end
 
       # @private
@@ -160,8 +159,8 @@ module Tekeya
       # @private
       # Deletes the activity's aggregate set when its deleted from the DB
       def delete_activity_from_redis
-        p "delete_activity_from_redis: self.activity_key: #{self.activity_key}"
-        p "|>>"
+        # p "delete_activity_from_redis: self.activity_key: #{self.activity_key}"
+        # p "|>>"
         ::Resque.enqueue(::Tekeya::Feed::Activity::Resque::DeleteActivity, self.activity_key)
       end
 

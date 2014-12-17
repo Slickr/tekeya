@@ -55,8 +55,8 @@ module Tekeya
           #   collect_garbage removed_keys
           # end
           def self.perform(entity_id, entity_type, activity_key, score)
-            p "Resque::ActivityFanout: entity_id: #{entity_id} + entity_type: #{entity_type} + activity_key: #{activity_key} + score: #{activity_key}"
-            p "|>>"
+            # p "Resque::ActivityFanout: entity_id: #{entity_id} + entity_type: #{entity_type} + activity_key: #{activity_key} + score: #{activity_key}"
+            # p "|>>"
             # get the entity class
             entity_type = entity_type.safe_constantize
             entity = entity_type.where(entity_type.entity_primary_key.to_sym => entity_id).first
