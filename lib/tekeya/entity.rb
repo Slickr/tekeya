@@ -419,22 +419,22 @@ module Tekeya
           end
           acts << ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
           # p "   Getting Act Key: #{current_act.to_s}"
-          p "|>>"
-          return acts.compact
         end
+        p "|>>"
+        return acts.compact
       else
         # Retrieve the activities from the DB
         acts_list = []
         db_recent_activities = self.activities.recent
         db_recent_activities.each do |activity|
-          acts_list << [activity, activity.author]
+          acts_list << [activity.created_at, activity, activity.author]
         end
-        acts_list = acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => page, :per_page => per_page)
+        acts_list = acts_list.sort{ |a, b| b[0] <=> a[0] }.paginate(:page => page, :per_page => per_page)
         acts_list.each do |act|
-          acts << ::Tekeya::Feed::Activity::Item.from_db(act[0], act[1])
+          acts << ::Tekeya::Feed::Activity::Item.from_db(act[1], act[2])
         end
         p "|>>"
-        return acts.compact
+        return acts
       end
 
       # return acts.sort { |a, b| b.timestamp <=> a.timestamp }
@@ -462,27 +462,26 @@ module Tekeya
           end
           acts << ::Tekeya::Feed::Activity::Item.from_redis(act_key, actor)
           # p "   Getting Act Key: #{current_act.to_s}"
-          p "|>>"
-          return acts.compact
-
           # (acts << current_act) if current_act.present? 
         end
+        p "|>>"
+        return acts
       else
         p "Getting Entity #{self.id} feeds from DB:"
         # Retrieve the activities from the DB
         acts_list = []
-        User.first.tracking.each do |tracker|
+        self.tracking.each do |tracker|
           db_recent_activities = tracker.activities.recent
           db_recent_activities.each do |activity|
-            acts_list << [activity, tracker]
+            acts_list << [activity.created_at, activity, tracker]
           end
         end
-        acts_list = acts_list.sort { |a, b| b[0].created_at <=> a[0].created_at }.paginate(:page => page, :per_page => per_page)
+        acts_list = acts_list.sort{ |a, b| b[0] <=> a[0] }.paginate(:page => page, :per_page => per_page)
         acts_list.each do |act|
-          acts << ::Tekeya::Feed::Activity::Item.from_db(act[0], act[1])
+          acts << ::Tekeya::Feed::Activity::Item.from_db(act[1], act[2])
         end
         p "|>>"
-        return acts.compact
+        return acts
       end
       # return acts.sort { |a, b| b.timestamp <=> a.timestamp }.paginate(:page => page, :per_page => per_page)
     end
